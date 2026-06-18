@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Build output — the installer is distributed via GitHub Releases, never committed
+dist/
+
+# Generated app icons (recreated by `npm run icon`)
+build/icon.png
+build/icon.ico
+
+# Dev / test scratch output
+_smoke/
+_shots/
+_e2e/
+*.log
+_*.txt
+
+# Local tooling / editor / OS
+.claude/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
