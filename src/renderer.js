@@ -17,15 +17,46 @@ $('theme').addEventListener('click', () => {
 });
 
 /* ---------- Input mode ---------- */
+// The calendar output buttons carry different labels in the Year vs Date-range tabs.
+const CAL_LABELS = {
+  year: {
+    'excel-view': ['Calendar View', 'One month per column'],
+    'excel-list': ['List', 'All months in a single column view'],
+    'pdf-year': ['Calendar', 'Full visual of the year on 1 page'],
+    'pdf-month': ['Monthly View', 'One month per page'],
+  },
+  range: {
+    'excel-view': ['Calendar View', 'One month per column'],
+    'excel-list': ['List', 'Months in a single column view'],
+    'pdf-year': ['Calendar View', '12 months / page, with numbered days'],
+    'pdf-month': ['Monthly View', 'One month per page'],
+  },
+};
+function applyCalendarLabels(mode) {
+  const set = CAL_LABELS[mode];
+  if (!set) return;
+  for (const type of Object.keys(set)) {
+    const btn = document.querySelector(`#calendar-outputs .dl[data-type="${type}"]`);
+    if (!btn) continue;
+    btn.querySelector('strong').textContent = set[type][0];
+    btn.querySelector('em').textContent = set[type][1];
+  }
+}
+
 $('mode').addEventListener('click', (e) => {
   const btn = e.target.closest('.seg-btn');
   if (!btn) return;
   state.mode = btn.dataset.mode;
-  document.querySelectorAll('.seg-btn').forEach((b) => b.classList.toggle('active', b === btn));
+  document.querySelectorAll('#mode .seg-btn').forEach((b) => b.classList.toggle('active', b === btn));
   $('year-pane').classList.toggle('hidden', state.mode !== 'year');
   $('range-pane').classList.toggle('hidden', state.mode !== 'range');
+  $('schedule-pane').classList.toggle('hidden', state.mode !== 'schedule');
+  $('calendar-outputs').classList.toggle('hidden', state.mode === 'schedule');
+  $('schedule-outputs').classList.toggle('hidden', state.mode !== 'schedule');
+  if (state.mode !== 'schedule') applyCalendarLabels(state.mode);
   $('year-err').textContent = '';
   $('range-err').textContent = '';
+  $('sched-err').textContent = '';
   if (state.mode === 'range') updateRangeClear();
 });
 $('year').value = String(new Date().getFullYear());
@@ -60,6 +91,73 @@ rangeClear.addEventListener('click', () => {
   updateRangeClear();
 });
 
+/* ---------- Hourly schedule ---------- */
+state.schedMode = 'time';
+state.timeFormat = '24h';
+const DAYPARTS = [['morning', 'Morning'], ['afternoon', 'Afternoon'], ['evening', 'Evening'], ['night', 'Night']];
+const partsEls = {};
+
+$('sched-mode').addEventListener('click', (e) => {
+  const b = e.target.closest('.subseg-btn');
+  if (!b) return;
+  state.schedMode = b.dataset.smode;
+  document.querySelectorAll('#sched-mode .subseg-btn').forEach((x) => x.classList.toggle('active', x === b));
+  $('sched-time-cfg').classList.toggle('hidden', state.schedMode !== 'time');
+  $('sched-parts-cfg').classList.toggle('hidden', state.schedMode !== 'dayparts');
+  $('sched-err').textContent = '';
+});
+$('time-format').addEventListener('click', (e) => {
+  const b = e.target.closest('.mini-btn');
+  if (!b) return;
+  state.timeFormat = b.dataset.fmt;
+  document.querySelectorAll('#time-format .mini-btn').forEach((x) => x.classList.toggle('active', x === b));
+});
+
+$('parts-list').innerHTML = DAYPARTS.map(([key, name]) =>
+  `<div class="part-row" data-part="${key}">
+     <span class="part-name">${name}</span>
+     <div class="part-start" aria-label="${name} start"></div>
+     <span class="dash">–</span>
+     <div class="part-end" aria-label="${name} end"></div>
+   </div>`).join('');
+DAYPARTS.forEach(([key]) => {
+  const row = $('parts-list').querySelector(`[data-part="${key}"]`);
+  partsEls[key] = {
+    start: window.createTimePicker(row.querySelector('.part-start'), {}),
+    end: window.createTimePicker(row.querySelector('.part-end'), { align: 'right' }),
+  };
+});
+
+const schedDateClear = $('sched-date-clear');
+const schedDatePicker = window.createDatePicker($('sched-date-field'), {
+  onChange: () => schedDateClear.classList.toggle('hidden', !schedDatePicker.getValue()),
+});
+schedDateClear.addEventListener('click', () => { schedDatePicker.setValue(''); schedDateClear.classList.add('hidden'); });
+
+function buildSchedulePayload(type) {
+  const startDate = schedDatePicker.getValue() || null;
+  if (state.schedMode === 'time') {
+    const raw = $('incr-value').value.replace(/\s+/g, '');
+    if (!/^\d+$/.test(raw) || parseInt(raw, 10) < 1) throw { field: 'sched', msg: 'Enter how often a row repeats (a whole number).' };
+    const step = ($('incr-unit').value === 'hours' ? parseInt(raw, 10) * 60 : parseInt(raw, 10));
+    if (step > 1440) throw { field: 'sched', msg: 'That’s longer than a day — pick a smaller increment.' };
+    return { type, mode: 'schedule', locale: state.locale, schedule: { labelMode: 'time', format: state.timeFormat, step, startDate, dayparts: {} } };
+  }
+  const toMinutes = (v) => { const [h, m] = v.split(':').map(Number); return h * 60 + m; };
+  const dayparts = {};
+  for (const [key, name] of DAYPARTS) {
+    const s = partsEls[key].start.getValue();
+    const en = partsEls[key].end.getValue();
+    if (s !== '' && en !== '') {
+      if (s === en) throw { field: 'sched', msg: `${name}: start and end can’t be the same.` };
+      dayparts[key] = { startMin: toMinutes(s), endMin: toMinutes(en) };
+    } else {
+      dayparts[key] = null;
+    }
+  }
+  return { type, mode: 'schedule', locale: state.locale, schedule: { labelMode: 'dayparts', startDate, dayparts } };
+}
+
 /* ---------- Input parsing (fail fast) ---------- */
 function parseYear() {
   const raw = $('year').value.replace(/\s+/g, '');
@@ -80,6 +178,7 @@ function parseRange() {
   return { start, end };
 }
 function buildPayload(type) {
+  if (state.mode === 'schedule') return buildSchedulePayload(type);
   if (state.mode === 'year') return { type, mode: 'year', year: parseYear(), locale: state.locale };
   const { start, end } = parseRange();
   return { type, mode: 'range', start, end, locale: state.locale };
@@ -190,6 +289,7 @@ document.querySelectorAll('.dl').forEach((btn) => {
   btn.addEventListener('click', async () => {
     $('year-err').textContent = '';
     $('range-err').textContent = '';
+    $('sched-err').textContent = '';
     let payload;
     try {
       payload = buildPayload(btn.dataset.type);

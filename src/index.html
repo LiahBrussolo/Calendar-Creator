@@ -34,10 +34,10 @@
 
   <main>
     <section class="card">
-      <div class="seg" id="mode">
+      <div class="seg seg-3" id="mode">
         <button class="seg-btn active" data-mode="year">Year</button>
         <button class="seg-btn" data-mode="range">Date range</button>
-        <span class="seg-glow" aria-hidden="true"></span>
+        <button class="seg-btn" data-mode="schedule">Weekly Schedule</button>
       </div>
 
       <div class="pane" id="year-pane">
@@ -64,6 +64,48 @@
         </div>
       </div>
 
+      <div class="pane hidden" id="schedule-pane">
+        <div class="sched-date">
+          <div class="sched-date-top">
+            <label>Start date (Monday) <span class="opt">optional</span></label>
+            <button type="button" id="sched-date-clear" class="link-clear hidden">Clear</button>
+          </div>
+          <div class="datefield" id="sched-date-field"></div>
+        </div>
+
+        <div class="subseg" id="sched-mode">
+          <button class="subseg-btn active" data-smode="time">By time</button>
+          <button class="subseg-btn" data-smode="dayparts">By part of day</button>
+        </div>
+
+        <div id="sched-time-cfg">
+          <div class="cfg-row">
+            <label>Time format</label>
+            <div class="mini-seg" id="time-format">
+              <button class="mini-btn active" data-fmt="24h">24-hour</button>
+              <button class="mini-btn" data-fmt="12h">12-hour</button>
+            </div>
+          </div>
+          <div class="cfg-row">
+            <label for="incr-value">A row every</label>
+            <div class="incr">
+              <input id="incr-value" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" value="1" />
+              <select id="incr-unit">
+                <option value="hours">hours</option>
+                <option value="minutes">minutes</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div id="sched-parts-cfg" class="hidden">
+          <p class="hint">Pick a start and end time for any of these — the rest fill with 4 untitled rows.</p>
+          <div class="parts" id="parts-list"></div>
+        </div>
+
+        <div class="err" id="sched-err"></div>
+      </div>
+
       <div class="field">
         <label for="lang-input">Language <span class="opt">optional</span></label>
         <div class="combo" id="combo">
@@ -76,16 +118,17 @@
     </section>
 
     <section class="card outputs">
+      <div id="calendar-outputs">
       <div class="out-group">
         <div class="out-head"><span class="tag xlsx">XLSX</span><h3>Excel</h3></div>
         <button class="dl" data-type="excel-view">
           <svg viewBox="0 0 24 24" class="dl-ico" aria-hidden="true"><rect x="3.5" y="4" width="17" height="16" rx="2.5"/><line x1="9" y1="4" x2="9" y2="20"/><line x1="3.5" y1="9.3" x2="20.5" y2="9.3"/><line x1="3.5" y1="14.6" x2="20.5" y2="14.6"/></svg>
-          <span class="dl-txt"><strong>Year view</strong><em>Months side by side</em></span>
+          <span class="dl-txt"><strong>Calendar View</strong><em>One month per column</em></span>
           <span class="dl-go" aria-hidden="true"><svg class="dl-arrow" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
         </button>
         <button class="dl" data-type="excel-list">
           <svg viewBox="0 0 24 24" class="dl-ico" aria-hidden="true"><line x1="9" y1="6.5" x2="20" y2="6.5"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="17.5" x2="20" y2="17.5"/><circle cx="4.6" cy="6.5" r="1.3"/><circle cx="4.6" cy="12" r="1.3"/><circle cx="4.6" cy="17.5" r="1.3"/></svg>
-          <span class="dl-txt"><strong>List</strong><em>Day-by-day, with notes column</em></span>
+          <span class="dl-txt"><strong>List</strong><em>All months in a single column view</em></span>
           <span class="dl-go" aria-hidden="true"><svg class="dl-arrow" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
         </button>
       </div>
@@ -94,14 +137,34 @@
         <div class="out-head"><span class="tag pdf">PDF</span><h3>PDF</h3></div>
         <button class="dl" data-type="pdf-year">
           <svg viewBox="0 0 24 24" class="dl-ico" aria-hidden="true"><rect x="3.5" y="4" width="17" height="16" rx="2.5"/><rect x="6.4" y="7" width="3.4" height="3.4" rx="0.7"/><rect x="10.8" y="7" width="3.4" height="3.4" rx="0.7"/><rect x="15.2" y="7" width="2.4" height="3.4" rx="0.7"/><rect x="6.4" y="11.4" width="3.4" height="3.4" rx="0.7"/><rect x="10.8" y="11.4" width="3.4" height="3.4" rx="0.7"/></svg>
-          <span class="dl-txt"><strong>Year on one page</strong><em>Whole year at a glance</em></span>
+          <span class="dl-txt"><strong>Calendar</strong><em>Full visual of the year on 1 page</em></span>
           <span class="dl-go" aria-hidden="true"><svg class="dl-arrow" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
         </button>
         <button class="dl" data-type="pdf-month">
           <svg viewBox="0 0 24 24" class="dl-ico" aria-hidden="true"><rect x="4.5" y="3.5" width="15" height="17" rx="2.5"/><line x1="4.5" y1="8" x2="19.5" y2="8"/><line x1="8" y1="11.5" x2="16" y2="11.5"/><line x1="8" y1="14.5" x2="16" y2="14.5"/><line x1="8" y1="17.5" x2="13" y2="17.5"/></svg>
-          <span class="dl-txt"><strong>Month per page</strong><em>Full day names, one month each</em></span>
+          <span class="dl-txt"><strong>Monthly View</strong><em>One month per page</em></span>
           <span class="dl-go" aria-hidden="true"><svg class="dl-arrow" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
         </button>
+      </div>
+      </div>
+
+      <div id="schedule-outputs" class="hidden">
+        <div class="out-group">
+          <div class="out-head"><span class="tag xlsx">XLSX</span><h3>Excel</h3></div>
+          <button class="dl" data-type="schedule-excel">
+            <svg viewBox="0 0 24 24" class="dl-ico" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><line x1="3.5" y1="9.3" x2="20.5" y2="9.3"/><line x1="9.7" y1="9.3" x2="9.7" y2="19.5"/><line x1="15" y1="9.3" x2="15" y2="19.5"/></svg>
+            <span class="dl-txt"><strong>Download</strong></span>
+            <span class="dl-go" aria-hidden="true"><svg class="dl-arrow" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+          </button>
+        </div>
+        <div class="out-group">
+          <div class="out-head"><span class="tag pdf">PDF</span><h3>PDF</h3></div>
+          <button class="dl" data-type="schedule-pdf">
+            <svg viewBox="0 0 24 24" class="dl-ico" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><line x1="3.5" y1="9.3" x2="20.5" y2="9.3"/><line x1="9.7" y1="9.3" x2="9.7" y2="19.5"/><line x1="15" y1="9.3" x2="15" y2="19.5"/></svg>
+            <span class="dl-txt"><strong>Download</strong></span>
+            <span class="dl-go" aria-hidden="true"><svg class="dl-arrow" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+          </button>
+        </div>
       </div>
     </section>
   </main>
@@ -110,6 +173,7 @@
 
   <script src="languages.js"></script>
   <script src="datepicker.js"></script>
+  <script src="timepicker.js"></script>
   <script src="renderer.js"></script>
 </body>
 </html>

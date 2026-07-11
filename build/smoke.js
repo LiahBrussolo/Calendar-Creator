@@ -42,6 +42,11 @@ app.whenReady().then(async () => {
 
   const year = planYear(2026);
   const range = planRange({ year: 2026, month0: 9, day: 29 }, { year: 2026, month0: 10, day: 16 }); // Oct 29 – Nov 16
+  const schedTime = { labelMode: 'time', format: '24h', step: 60, dayparts: {} };
+  const schedTime2h = { labelMode: 'time', format: '24h', step: 120, dayparts: {} };
+  const schedTime4h = { labelMode: 'time', format: '24h', step: 240, dayparts: {} };
+  const schedParts = { labelMode: 'dayparts', dayparts: { morning: { startMin: 360, endMin: 720 }, afternoon: null, evening: { startMin: 1140, endMin: 1260 }, night: null } };
+  const schedDated = { labelMode: 'time', format: '24h', step: 120, startDate: '2040-01-01', dayparts: {} };
 
   const jobs = [
     ['year-en-view.xlsx', () => excel.buildYearView(year, 'en')],
@@ -54,6 +59,16 @@ app.whenReady().then(async () => {
     ['year-en-month.pdf', () => htmlToPdf(pdf.buildMonthPerPageHTML(year, 'en'))],
     ['jan-en-month.pdf', () => htmlToPdf(pdf.buildMonthPerPageHTML(
       planRange({ year: 2026, month0: 0, day: 1 }, { year: 2026, month0: 0, day: 31 }), 'en'))],
+    ['sched-time-en.xlsx', () => excel.buildSchedule(schedTime, 'en')],
+    ['sched-parts-en.xlsx', () => excel.buildSchedule(schedParts, 'en')],
+    ['sched-time24rows.pdf', () => htmlToPdf(pdf.buildScheduleHTML(schedTime, 'en'))],
+    ['sched-time12rows.pdf', () => htmlToPdf(pdf.buildScheduleHTML(schedTime2h, 'en'))],
+    ['sched-time6rows.pdf', () => htmlToPdf(pdf.buildScheduleHTML(schedTime4h, 'en'))],
+    ['sched-parts-fr.pdf', () => htmlToPdf(pdf.buildScheduleHTML(schedParts, 'fr'))],
+    ['sched-parts-ar.pdf', () => htmlToPdf(pdf.buildScheduleHTML(schedParts, 'ar'))],
+    ['sched-dated-en.pdf', () => htmlToPdf(pdf.buildScheduleHTML(schedDated, 'en'))],
+    ['sched-dated-fr.pdf', () => htmlToPdf(pdf.buildScheduleHTML(schedDated, 'fr'))],
+    ['sched-dated-en.xlsx', () => excel.buildSchedule(schedDated, 'en')],
   ];
 
   for (const [name, fn] of jobs) {

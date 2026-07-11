@@ -2,6 +2,7 @@
 
 const { daysInMonth, dayOfWeek } = require('./calendar');
 const { monthNames, dayNamesLong, dayNamesNarrow, isRTL } = require('./i18n');
+const { buildScheduleGrid } = require('./schedule');
 
 const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 
@@ -124,4 +125,58 @@ function buildMonthPerPageHTML(plan, locale) {
     <meta charset="utf-8"><style>${css}</style></head><body>${pages}</body></html>`;
 }
 
-module.exports = { buildYearOnePageHTML, buildMonthPerPageHTML };
+// ---- Weekly hourly schedule: day columns, time / day-part rows ----
+function buildScheduleHTML(config, locale) {
+  const { dayHeaders, rows } = buildScheduleGrid(config, locale);
+  const rtl = isRTL(locale);
+  const hasDates = dayHeaders.some((h) => h.date);
+  const head = '<th class="lbl"></th>' + dayHeaders.map((h) =>
+    `<th><span class="dn">${esc(h.name)}</span>${h.date ? `<span class="dd">${esc(h.date)}</span>` : ''}</th>`).join('');
+  const blanks = '<td></td>'.repeat(7);
+  const body = rows.map((row) => {
+    if (row.kind === 'section') return `<tr class="sec"><td colspan="8">${esc(row.label)}</td></tr>`;
+    return `<tr><td class="lbl">${esc(row.label)}</td>${blanks}</tr>`;
+  }).join('');
+
+  // Pick the orientation whose cells are least cramped, then size rows to fill
+  // the page (or the comfortable minimum, flowing to more pages if needed).
+  const MARGIN = 12;
+  const HEADER_H = hasDates ? 16 : 10;
+  const SECTION_H = 9;
+  const MIN_ROW = 7;
+  const SAFETY = 6; // guard against spilling onto a blank page
+  const sections = rows.filter((r) => r.kind === 'section').length;
+  const dataRows = Math.max(rows.length - sections, 1);
+  const layout = (pw, ph) => {
+    const colW = (pw - 2 * MARGIN) / 8;
+    const avail = ph - 2 * MARGIN - HEADER_H - sections * SECTION_H - SAFETY;
+    const rowH = Math.max(avail / dataRows, MIN_ROW);
+    return { colW, rowH, min: Math.min(colW, rowH) };
+  };
+  const P = layout(210, 297);
+  const L = layout(297, 210);
+  const landscape = L.min > P.min;
+  const rowH = (landscape ? L : P).rowH.toFixed(2);
+
+  const css = `${SHARED_CSS}
+    @page{ size:A4 ${landscape ? 'landscape' : 'portrait'}; margin:${MARGIN}mm; }
+    table{ width:100%; border-collapse:collapse; table-layout:fixed; }
+    thead{ display:table-header-group; }
+    th{ height:${HEADER_H}mm; background:var(--head); color:var(--head-ink);
+        padding:1.5mm 1mm; text-align:center; border:.3mm solid var(--head); vertical-align:middle; }
+    th .dn{ display:block; font-size:10.5pt; font-weight:600; }
+    th .dd{ display:block; font-size:8pt; font-weight:400; margin-top:.5mm; }
+    th.lbl{ width:12%; }
+    td{ height:${rowH}mm; border:.3mm solid var(--line); padding:2mm; vertical-align:top; }
+    td.lbl{ text-align:center; font-size:10pt; color:var(--accent); font-weight:500;
+            white-space:nowrap; background:#FAF7F3; }
+    tr.sec td{ height:${SECTION_H}mm; background:var(--soft); color:#2E2721; font-weight:700; font-size:11pt;
+               padding:1.5mm 3mm; text-align:${rtl ? 'right' : 'left'}; letter-spacing:.02em;
+               border-color:var(--soft); vertical-align:middle; }`;
+
+  return `<!doctype html><html lang="${esc(locale)}" dir="${rtl ? 'rtl' : 'ltr'}"><head>
+    <meta charset="utf-8"><style>${css}</style></head>
+    <body><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></body></html>`;
+}
+
+module.exports = { buildYearOnePageHTML, buildMonthPerPageHTML, buildScheduleHTML };

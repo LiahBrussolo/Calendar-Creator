@@ -129,6 +129,53 @@ main {
   box-shadow: 0 1px 4px -1px rgba(50,45,41,.18);
 }
 :root[data-theme="dark"] .seg-btn.active { box-shadow: 0 1px 6px -1px rgba(0,0,0,.5); }
+.seg-3 { grid-template-columns: 1fr 1fr 1fr; }
+.seg-3 .seg-btn { font-size: 13.5px; padding: 9px 2px; }
+
+/* ---- Hourly schedule controls ---- */
+.subseg {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 3px; margin-bottom: 18px;
+}
+.subseg-btn {
+  border: none; background: transparent; color: var(--text-soft);
+  font: inherit; font-size: 13.5px; font-weight: 600; padding: 8px 0;
+  border-radius: 7px; cursor: pointer;
+  transition: color .2s ease, background-color .2s ease;
+}
+.subseg-btn.active { background: var(--surface); color: var(--accent); box-shadow: 0 1px 3px -1px rgba(50,45,41,.15); }
+:root[data-theme="dark"] .subseg-btn.active { box-shadow: 0 1px 5px -1px rgba(0,0,0,.45); }
+
+.cfg-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.cfg-row:last-child { margin-bottom: 0; }
+.cfg-row label { margin-bottom: 0; }
+
+.mini-seg { display: inline-flex; gap: 3px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 9px; padding: 3px; }
+.mini-btn {
+  border: none; background: transparent; color: var(--text-soft);
+  font: inherit; font-size: 12.5px; font-weight: 600; padding: 6px 13px; border-radius: 6px; cursor: pointer;
+  transition: color .2s ease, background-color .2s ease;
+}
+.mini-btn.active { background: var(--surface); color: var(--accent); box-shadow: 0 1px 3px -1px rgba(50,45,41,.15); }
+
+.incr { display: inline-flex; align-items: center; gap: 8px; }
+.incr input { width: 62px; text-align: center; padding: 9px 8px; font-size: 15px; font-weight: 600; }
+
+select {
+  font: inherit; color: var(--text); background: var(--surface-2);
+  border: 1px solid var(--border); border-radius: 9px; padding: 9px 10px; cursor: pointer; outline: none;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+select:hover { border-color: var(--border-strong); }
+select:focus { border-color: var(--accent-2); box-shadow: 0 0 0 4px var(--ring); }
+
+.hint { font-size: 12.5px; color: var(--muted); margin-bottom: 14px; line-height: 1.45; }
+.parts { display: flex; flex-direction: column; gap: 10px; }
+.part-row { display: flex; align-items: center; gap: 10px; }
+.part-name { flex: 0 0 78px; font-size: 13.5px; font-weight: 600; color: var(--text-soft); }
+.part-row .timefield { flex: 1; min-width: 0; }
+.part-row .dash { color: var(--muted); flex: none; }
 
 /* ---- Inputs ---- */
 .pane.hidden, .hidden { display: none !important; }
@@ -142,7 +189,7 @@ label {
 }
 label .opt { color: var(--muted); font-weight: 500; text-transform: lowercase; }
 
-input[type="text"] {
+input[type="text"], input[type="time"] {
   width: 100%;
   font: inherit;
   color: var(--text);
@@ -158,6 +205,9 @@ input:focus { border-color: var(--accent-2); box-shadow: 0 0 0 4px var(--ring); 
 input:hover:not(:focus) { border-color: var(--border-strong); }
 
 #year { font-size: 19px; font-weight: 600; letter-spacing: .04em; text-align: left; }
+
+::-webkit-calendar-picker-indicator { cursor: pointer; opacity: .55; }
+:root[data-theme="dark"] ::-webkit-calendar-picker-indicator { filter: invert(.85); }
 
 /* ---- Custom date picker ---- */
 .datefield { position: relative; }
@@ -215,15 +265,15 @@ input:hover:not(:focus) { border-color: var(--border-strong); }
 .df-day.df-sel { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
 .df-day:disabled { color: var(--muted); opacity: .3; cursor: default; }
 
-.df-month {
+.df-month, .df-year {
   font: inherit; font-size: 13px; font-weight: 500;
   border: none; background: transparent; color: var(--text);
   border-radius: 9px; padding: 13px 0; cursor: pointer;
   transition: background-color .12s ease, color .12s ease;
 }
-.df-month:hover:not(:disabled) { background: var(--surface-2); }
-.df-month.df-sel { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
-.df-month:disabled { color: var(--muted); opacity: .3; cursor: default; }
+.df-month:hover:not(:disabled), .df-year:hover:not(:disabled) { background: var(--surface-2); }
+.df-month.df-sel, .df-year.df-sel { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.df-month:disabled, .df-year:disabled { color: var(--muted); opacity: .3; cursor: default; }
 
 .df-foot { display: flex; justify-content: flex-end; margin-top: 8px; }
 .df-today {
@@ -232,6 +282,64 @@ input:hover:not(:focus) { border-color: var(--border-strong); }
   transition: background-color .15s ease;
 }
 .df-today:hover { background: var(--surface-2); }
+
+/* ---- Schedule start date + clock time picker ---- */
+.sched-date { margin-bottom: 18px; }
+.sched-date-top { display: flex; align-items: center; justify-content: space-between; }
+.sched-date-top label { margin-bottom: 8px; }
+
+.timefield { position: relative; }
+.tf-btn {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  font: inherit; color: var(--text); background: var(--surface-2);
+  border: 1px solid var(--border); border-radius: 11px; padding: 10px 12px;
+  cursor: pointer; text-align: left;
+  transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
+}
+.tf-btn:hover { border-color: var(--border-strong); }
+.timefield.tf-open .tf-btn { border-color: var(--accent-2); box-shadow: 0 0 0 4px var(--ring); }
+.tf-val { font-variant-numeric: tabular-nums; letter-spacing: .03em; }
+.tf-val.tf-empty { color: var(--muted); }
+.tf-ico { width: 18px; height: 18px; flex: none; fill: none; stroke: var(--muted); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+.tf-pop {
+  position: absolute; top: calc(100% + 8px); left: 0; z-index: 45;
+  width: 240px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; box-shadow: var(--shadow); padding: 14px;
+}
+.timefield.tf-right .tf-pop { left: auto; right: 0; }
+
+.tf-head { display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 8px; }
+.tf-seg {
+  font: inherit; font-size: 25px; font-weight: 600; font-variant-numeric: tabular-nums;
+  color: var(--text-soft); background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 9px; padding: 3px 11px; cursor: pointer; min-width: 52px; text-align: center;
+  transition: color .15s ease, background-color .15s ease, border-color .15s ease;
+}
+.tf-seg.on { color: var(--accent); border-color: var(--accent-2); background: color-mix(in srgb, var(--accent-2) 16%, var(--surface)); }
+.tf-colon { font-size: 22px; font-weight: 600; color: var(--muted); }
+
+.tf-clock { width: 100%; height: auto; display: block; margin: 2px 0; }
+.tf-face { fill: var(--surface-2); }
+.tf-hand { stroke: var(--accent); stroke-width: 2.5; }
+.tf-seldot, .tf-center { fill: var(--accent); }
+.tf-num { font-size: 14.5px; fill: var(--text); text-anchor: middle; dominant-baseline: central; cursor: pointer; }
+.tf-num.tf-inner { font-size: 12px; fill: var(--text-soft); }
+.tf-num.on { fill: var(--accent-ink); font-weight: 600; }
+
+.tf-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
+.tf-clear {
+  font: inherit; font-size: 12.5px; font-weight: 600; color: var(--text-soft);
+  background: transparent; border: none; cursor: pointer; padding: 5px 8px; border-radius: 7px;
+  transition: color .15s ease, background-color .15s ease;
+}
+.tf-clear:hover { color: var(--accent); background: var(--surface-2); }
+.tf-done {
+  font: inherit; font-size: 13px; font-weight: 600; color: var(--accent-ink);
+  background: var(--accent); border: none; border-radius: 9px; padding: 7px 16px; cursor: pointer;
+  transition: filter .15s ease;
+}
+.tf-done:hover { filter: brightness(1.06); }
 
 .row { display: flex; align-items: flex-end; gap: 12px; }
 .row .col { flex: 1; }
@@ -295,7 +403,8 @@ input:hover:not(:focus) { border-color: var(--border-strong); }
 .combo-empty { padding: 16px 12px; color: var(--muted); text-align: center; font-size: 14px; }
 
 /* ---- Outputs ---- */
-.outputs { display: flex; flex-direction: column; gap: 22px; }
+.outputs { display: flex; flex-direction: column; }
+#calendar-outputs, #schedule-outputs { display: flex; flex-direction: column; gap: 24px; }
 .out-group { display: flex; flex-direction: column; gap: 10px; }
 .out-head { display: flex; align-items: center; gap: 9px; margin-bottom: 2px; }
 .out-head h3 { font-size: 13px; font-weight: 700; letter-spacing: .04em; color: var(--text-soft); text-transform: uppercase; }

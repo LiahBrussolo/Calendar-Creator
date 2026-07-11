@@ -16,11 +16,15 @@ function planFromInput({ mode, year, start, end }) {
   throw new Error('Unknown input mode.');
 }
 
-const OUTPUTS = {
-  'excel-view': { ext: 'xlsx', suffix: 'Year View', make: (p, l) => excel.buildYearView(p, l) },
-  'excel-list': { ext: 'xlsx', suffix: 'List', make: (p, l) => excel.buildList(p, l) },
-  'pdf-year': { ext: 'pdf', suffix: 'Year', make: (p, l, render) => render(pdf.buildYearOnePageHTML(p, l)) },
-  'pdf-month': { ext: 'pdf', suffix: 'Monthly', make: (p, l, render) => render(pdf.buildMonthPerPageHTML(p, l)) },
+const CALENDAR_OUTPUTS = {
+  'excel-view': { ext: 'xlsx', suffix: 'Year View', make: (plan, l) => excel.buildYearView(plan, l) },
+  'excel-list': { ext: 'xlsx', suffix: 'List', make: (plan, l) => excel.buildList(plan, l) },
+  'pdf-year': { ext: 'pdf', suffix: 'Year', make: (plan, l, render) => render(pdf.buildYearOnePageHTML(plan, l)) },
+  'pdf-month': { ext: 'pdf', suffix: 'Monthly', make: (plan, l, render) => render(pdf.buildMonthPerPageHTML(plan, l)) },
+};
+const SCHEDULE_OUTPUTS = {
+  'schedule-excel': { ext: 'xlsx', make: (cfg, l) => excel.buildSchedule(cfg, l) },
+  'schedule-pdf': { ext: 'pdf', make: (cfg, l, render) => render(pdf.buildScheduleHTML(cfg, l)) },
 };
 
 function uniquePath(dir, base, ext) {
@@ -32,12 +36,25 @@ function uniquePath(dir, base, ext) {
 
 // Build the requested output, save it to dir, and return its path + name.
 async function generate(payload, dir, htmlToPdf) {
-  const out = OUTPUTS[payload.type];
-  if (!out) throw new Error('Unknown output type.');
   const locale = payload.locale || 'en';
-  const plan = planFromInput(payload);
-  const buffer = await out.make(plan, locale, htmlToPdf);
-  const filePath = uniquePath(dir, `Calendar ${plan.fileLabel} — ${out.suffix}`, out.ext);
+  let buffer;
+  let base;
+  let ext;
+  if (payload.mode === 'schedule') {
+    const out = SCHEDULE_OUTPUTS[payload.type];
+    if (!out) throw new Error('Unknown output type.');
+    buffer = await out.make(payload.schedule, locale, htmlToPdf);
+    base = 'Weekly Schedule';
+    ext = out.ext;
+  } else {
+    const out = CALENDAR_OUTPUTS[payload.type];
+    if (!out) throw new Error('Unknown output type.');
+    const plan = planFromInput(payload);
+    buffer = await out.make(plan, locale, htmlToPdf);
+    base = `Calendar ${plan.fileLabel} — ${out.suffix}`;
+    ext = out.ext;
+  }
+  const filePath = uniquePath(dir, base, ext);
   fs.writeFileSync(filePath, buffer);
   return { path: filePath, name: path.basename(filePath) };
 }

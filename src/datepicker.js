@@ -82,6 +82,23 @@
       body.innerHTML = html;
     }
 
+    function renderYears() {
+      mode = 'years';
+      pop.classList.add('df-monthview');
+      const start = Math.floor(viewY / 12) * 12;
+      lbl.textContent = `${start}–${start + 11}`;
+      const lo = min();
+      const hi = max();
+      const loY = lo ? Number(lo.slice(0, 4)) : null;
+      const hiY = hi ? Number(hi.slice(0, 4)) : null;
+      let html = '';
+      for (let y = start; y < start + 12; y++) {
+        const dis = (loY !== null && y < loY) || (hiY !== null && y > hiY);
+        html += `<button type="button" class="df-year${y === viewY ? ' df-sel' : ''}" data-y="${y}"${dis ? ' disabled' : ''}>${y}</button>`;
+      }
+      body.innerHTML = html;
+    }
+
     function setView(y, m) { viewY = y; viewM = m; renderDays(); }
     function shiftMonth(delta) {
       let m = viewM + delta;
@@ -105,14 +122,28 @@
     function close() { pop.classList.add('hidden'); root.classList.remove('df-open'); }
 
     root.querySelector('.df-btn').addEventListener('click', (e) => { e.stopPropagation(); if (isOpen()) close(); else open(); });
-    root.querySelector('.df-prev').addEventListener('click', () => { if (mode === 'months') { viewY -= 1; renderMonths(); } else shiftMonth(-1); });
-    root.querySelector('.df-next').addEventListener('click', () => { if (mode === 'months') { viewY += 1; renderMonths(); } else shiftMonth(1); });
-    root.querySelector('.df-title').addEventListener('click', () => { if (mode === 'days') renderMonths(); else renderDays(); });
+    root.querySelector('.df-prev').addEventListener('click', () => {
+      if (mode === 'years') { viewY -= 12; renderYears(); }
+      else if (mode === 'months') { viewY -= 1; renderMonths(); }
+      else shiftMonth(-1);
+    });
+    root.querySelector('.df-next').addEventListener('click', () => {
+      if (mode === 'years') { viewY += 12; renderYears(); }
+      else if (mode === 'months') { viewY += 1; renderMonths(); }
+      else shiftMonth(1);
+    });
+    root.querySelector('.df-title').addEventListener('click', () => {
+      if (mode === 'days') renderMonths();
+      else if (mode === 'months') renderYears();
+      else renderMonths();
+    });
     body.addEventListener('click', (e) => {
       const day = e.target.closest('.df-day');
       if (day && !day.disabled) { setValue(day.dataset.iso); close(); return; }
       const mon = e.target.closest('.df-month');
-      if (mon && !mon.disabled) { viewM = Number(mon.dataset.m); renderDays(); }
+      if (mon && !mon.disabled) { viewM = Number(mon.dataset.m); renderDays(); return; }
+      const yr = e.target.closest('.df-year');
+      if (yr && !yr.disabled) { viewY = Number(yr.dataset.y); renderMonths(); }
     });
     root.querySelector('.df-today').addEventListener('click', () => {
       const now = new Date();

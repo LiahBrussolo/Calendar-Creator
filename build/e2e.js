@@ -48,6 +48,12 @@ app.whenReady().then(async () => {
     const rr = await window.api.generate({ type: 'pdf-month', mode: 'range', locale: 'fr',
       start: { year: 2026, month0: 2, day: 15 }, end: { year: 2026, month0: 5, day: 10 } });
     out.results.range = rr.name;
+    const se = await window.api.generate({ type: 'schedule-excel', mode: 'schedule', locale: 'en',
+      schedule: { labelMode: 'time', format: '24h', step: 60, dayparts: {} } });
+    out.results['sched-excel'] = se.name;
+    const sp = await window.api.generate({ type: 'schedule-pdf', mode: 'schedule', locale: 'fr',
+      schedule: { labelMode: 'dayparts', startDate: '2040-01-01', dayparts: { morning: { startMin: 360, endMin: 720 }, afternoon: null, evening: { startMin: 1140, endMin: 1260 }, night: null } } });
+    out.results['sched-pdf'] = sp.name;
     return out;
   })()`);
 
@@ -55,7 +61,7 @@ app.whenReady().then(async () => {
   console.log('api bridge   :', info.apiType);
   console.log('languages    :', info.langCount, '| has English:', info.hasEnglish);
   console.log('theme applied:', info.theme);
-  console.log('files created:', fs.readdirSync(tmpDir).length, 'of 5');
+  console.log('files created:', fs.readdirSync(tmpDir).length, 'of 7');
   Object.entries(info.results).forEach(([k, v]) => console.log('   •', k.padEnd(11), v));
   console.log('console errors:', bad.length ? bad : 'none');
   fs.rmSync(tmpDir, { recursive: true, force: true });

@@ -15,6 +15,9 @@ _e2e/
 *.log
 _*.txt
 
+# Stray nested clone left by a GitHub Desktop attempt — safe to delete
+/Calendar Creator/
+
 # Local tooling / editor / OS
 .claude/
 .vscode/

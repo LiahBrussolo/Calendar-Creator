@@ -2,11 +2,13 @@
 
 const ExcelJS = require('exceljs');
 const { monthNames, isRTL } = require('./i18n');
+const schedule = require('./schedule');
 
 // Elegant on-palette tones (ARGB) derived from the app palette.
 const HEADER_FILL = 'FF746558'; // dark taupe
 const HEADER_INK = 'FFF4F1EC';  // cream
 const WEEKEND_FILL = 'FFDFDBD7'; // soft warm grey
+const SECTION_FILL = 'FFD6CEC3'; // soft taupe day-part divider
 const INK = 'FF322D29';          // near-black
 const LINE = 'FFD8D2CA';         // light taupe grid line
 
@@ -96,4 +98,61 @@ async function buildList(plan, locale) {
   return wb.xlsx.writeBuffer();
 }
 
-module.exports = { buildYearView, buildList };
+// Weekly hourly schedule: day columns, time / day-part rows.
+async function buildSchedule(config, locale) {
+  const { dayHeaders, rows } = schedule.buildScheduleGrid(config, locale);
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('Schedule', {
+    views: [{ state: 'frozen', ySplit: 1, rightToLeft: isRTL(locale), showGridLines: false }],
+  });
+
+  ws.getColumn(1).width = 14;
+  for (let c = 2; c <= 8; c++) ws.getColumn(c).width = 16;
+
+  const corner = ws.getCell(1, 1);
+  corner.fill = solid(HEADER_FILL);
+  corner.border = BORDER;
+  const hasDates = dayHeaders.some((h) => h.date);
+  dayHeaders.forEach((h, i) => {
+    const cell = ws.getCell(1, i + 2);
+    cell.value = h.date
+      ? { richText: [
+        { text: h.name, font: { name: 'Calibri', size: 12, bold: true, color: { argb: HEADER_INK } } },
+        { text: `\n${h.date}`, font: { name: 'Calibri', size: 9, color: { argb: HEADER_INK } } },
+      ] }
+      : h.name;
+    cell.font = HEADER_FONT;
+    cell.fill = solid(HEADER_FILL);
+    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    cell.border = BORDER;
+  });
+  ws.getRow(1).height = hasDates ? 34 : 24;
+
+  let r = 1;
+  for (const row of rows) {
+    r += 1;
+    if (row.kind === 'section') {
+      ws.mergeCells(r, 1, r, 8);
+      const cell = ws.getCell(r, 1);
+      cell.value = row.label;
+      cell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: INK } };
+      cell.fill = solid(SECTION_FILL);
+      cell.alignment = { horizontal: 'left', vertical: 'middle', indent: 1 };
+      ws.getRow(r).height = 20;
+    } else {
+      const label = ws.getCell(r, 1);
+      if (row.label) {
+        label.value = row.label;
+        label.font = FONT;
+        label.alignment = { horizontal: 'center', vertical: 'middle' };
+      }
+      label.border = BORDER;
+      for (let c = 2; c <= 8; c++) ws.getCell(r, c).border = BORDER;
+      ws.getRow(r).height = 22;
+    }
+  }
+
+  return wb.xlsx.writeBuffer();
+}
+
+module.exports = { buildYearView, buildList, buildSchedule };
